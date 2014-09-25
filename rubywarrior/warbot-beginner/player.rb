@@ -1,14 +1,15 @@
 
+require 'byebug'
+
 class Player
 
   def play_turn(warrior)
-    # @health ||= warrior.health
+    @health ||= warrior.health
     # @position_initialized ||= false
-    # @warrior ||= warrior
     
     # @position_initialized ? feel_forward(warrior) : feel_backward(warrior)
     feel_forward(warrior)
-    # @health = warrior.health
+    @health = warrior.health
   end
   
   def feel_backward(warrior)
@@ -34,8 +35,8 @@ class Player
     when warrior.feel.enemy?
       warrior.attack!
       
-    # when warrior.feel.empty? && wounded? && !under_attack?
-    #   warrior.rest!
+    when warrior.feel.empty? && wounded?(warrior) && !under_attack?(warrior)
+      warrior.rest!
     
     when warrior.feel.empty?
       warrior.walk!
@@ -43,12 +44,12 @@ class Player
     end
   end
   
-  def under_attack?
-    @health > @warrior.health
+  def under_attack?(warrior)
+    @health > warrior.health
   end
   
-  def wounded?
-    @warrior.health < 20
+  def wounded?(warrior)
+    warrior.health < 20
   end
   
 end
