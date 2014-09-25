@@ -29,8 +29,8 @@ class Player
   def feel_forward(warrior)
     # byebug
     case
-    # when warrior.feel.captive?
-    #   warrior.rescue!
+    when warrior.feel.captive?
+      warrior.rescue!
       
     when warrior.feel.enemy?
       warrior.attack!
