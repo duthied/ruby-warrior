@@ -6,10 +6,16 @@ class Player
   def play_turn(warrior)
     @health ||= warrior.health
     @hit_the_wall ||= false
-    
-    puts "@hit_the_wall #{@hit_the_wall}"
-    @hit_the_wall ? feel_forward(warrior) : feel_backward(warrior)
-    
+    @action_taken = false
+
+    if warrior.feel.wall?
+      warrior.pivot!
+      @action_taken = true
+    end
+
+    # display_status(warrior)
+    @hit_the_wall ? feel_forward(warrior) : feel_backward(warrior) unless @action_taken
+
     @health = warrior.health
   end
   
@@ -22,13 +28,10 @@ class Player
       warrior.rescue!(:backward)
       
     when warrior.feel(:backward).wall? && wounded?(warrior)
-      puts "warrior.feel(:backward).wall? #{warrior.feel(:backward).wall?} and wounded?(warrior) #{wounded?(warrior)}"
       warrior.rest!
       @hit_the_wall = true
-      puts "@hit_the_wall #{@hit_the_wall}"
 
     when warrior.feel(:backward).wall? 
-      puts "warrior.feel(:backward).wall? #{warrior.feel(:backward).wall?}"
       @hit_the_wall = true
         
     end
@@ -36,6 +39,7 @@ class Player
   
   def feel_forward(warrior)
     case
+
     when warrior.feel.captive?
       warrior.rescue!
       
@@ -63,6 +67,21 @@ class Player
   
   def wounded?(warrior)
     warrior.health < 20
+  end
+
+  def display_status(warrior)
+    puts ''
+    puts '================[ status ]================'
+    puts "health: #{warrior.health}"
+    puts "under attack?: #{under_attack?(warrior)}"
+    puts '=========================================='
+    puts ''
+  end
+
+  def log_this(message)
+    puts "-------------------[ log ]--------------------------"
+    puts " #{message}"
+    puts "----------------------------------------------------"
   end
   
 end
