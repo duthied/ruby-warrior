@@ -1,4 +1,3 @@
-
 require 'byebug'
 
 class Player
@@ -17,53 +16,44 @@ class Player
 
     @health = warrior.health
   end
-  
+
   def look_forward_and_react(warrior)
-    spaces = warrior.look
-    enemy_space = spaces.index { |space| space.enemy? == true } if spaces.any?(&:enemy?)
-    captive_space = spaces.index { |space| space.captive? == true } if spaces.any?(&:captive?)
+    area_info = assess_area(warrior.look)
     
-    # if something_visible?(spaces) && clear_shot?(spaces)
-    #   warrior.shoot!
-    # elsif something_visible?(spaces) && !clear_shot?(spaces) && captive_space == 0
-    #   warrior.rescue!
-    # elsif something_visible?(spaces) && !clear_shot?(spaces) && captive_space > 0
-    #   do_walk(warrior)
-    # elsif !something_visible?(spaces)
-    #   do_walk(warrior)
-    # end
-    # @action_taken = true
-
-    if enemy_space
-      if captive_space
-        if captive_space < enemy_space
-          if captive_space == 0
-            warrior.rescue! unless @action_taken
-            @action_taken = true
-          else
-            do_walk(warrior) unless @action_taken
-          end
-        else
-          warrior.shoot! unless @action_taken
-          @action_taken = true
-        end
-      else
-        warrior.shoot! unless @action_taken
-        @action_taken = true
-      end
+    if area_info[:clear_shot]
+      warrior.shoot!
+    elsif area_info[:captive_visible] && area_info[:captive_range] == 0
+      warrior.rescue!
+    elsif area_info[:captive_visible] && area_info[:captive_range] > 0
+      do_walk(warrior)
     else
-      do_walk(warrior) unless @action_taken
+      do_walk(warrior)
     end
+    @action_taken = true
   end
 
-  def clear_shot?(spaces)
-    enemy_space = spaces.index { |space| space.enemy? == true } if spaces.any?(&:enemy?)
-    captive_space = spaces.index { |space| space.captive? == true } if spaces.any?(&:captive?)
-    captive_space > enemy_space
-  end
+  def assess_area(spaces)
+    area_info = {}
 
-  def something_visible?(spaces)
-    spaces.any?(&:enemy?) || spaces.any?(&:captive?)
+    if spaces.any?(&:enemy?)
+      area_info[:enemy_visible] = true
+      area_info[:enemy_range] = spaces.index { |space| space.enemy? == true }
+    end
+
+    if spaces.any?(&:captive?)
+      area_info[:captive_visible] = true
+      area_info[:captive_range] = spaces.index { |space| space.captive? == true }
+    end
+
+    if area_info[:enemy_visible] && area_info[:captive_visible]
+      area_info[:clear_shot] = true if area_info[:enemy_range] < area_info[:captive_range]
+    elsif area_info[:enemy_visible]
+      area_info[:clear_shot] = true 
+    else
+      area_info[:clear_shot] = false
+    end
+
+    area_info
   end
 
   def do_walk(warrior)
@@ -74,29 +64,29 @@ class Player
     case
     when warrior.feel(:backward).empty?
       warrior.walk!(:backward)
-    
+
     when warrior.feel(:backward).captive?
       warrior.rescue!(:backward)
-      
+
     when warrior.feel(:backward).wall? && wounded?(warrior)
       warrior.rest!
       @hit_the_wall = true
 
     when warrior.feel(:backward).wall? 
       @hit_the_wall = true
-        
+
     end
   end
-  
+
   def feel_forward(warrior)
     case
 
     when warrior.feel.captive?
       warrior.rescue!
-      
+ 
     when warrior.feel.enemy?
       warrior.attack!
-      
+
     when warrior.feel.empty? && wounded?(warrior) && !under_attack?(warrior)
       # warrior.rest!
       if warrior.feel(:backward).empty?
@@ -105,17 +95,17 @@ class Player
       else
         warrior.rest!
       end
-      
+
     when warrior.feel.empty?
       warrior.walk!
-     
+
     end
   end
-  
+
   def under_attack?(warrior)
     @health > warrior.health
   end
-  
+
   def wounded?(warrior)
     warrior.health < 20
   end
@@ -134,6 +124,5 @@ class Player
     puts " #{message}"
     puts "----------------------------------------------------"
   end
-  
+
 end
-  
