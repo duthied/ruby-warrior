@@ -13,12 +13,63 @@ class Player
       @action_taken = true
     end
 
-    # display_status(warrior)
-    @hit_the_wall ? feel_forward(warrior) : feel_backward(warrior) unless @action_taken
+    look_forward_and_react(warrior) unless @action_taken
 
     @health = warrior.health
   end
   
+  def look_forward_and_react(warrior)
+    spaces = warrior.look
+    enemy_space = spaces.index { |space| space.enemy? == true } if spaces.any?(&:enemy?)
+    captive_space = spaces.index { |space| space.captive? == true } if spaces.any?(&:captive?)
+    
+    # if something_visible?(spaces) && clear_shot?(spaces)
+    #   warrior.shoot!
+    # elsif something_visible?(spaces) && !clear_shot?(spaces) && captive_space == 0
+    #   warrior.rescue!
+    # elsif something_visible?(spaces) && !clear_shot?(spaces) && captive_space > 0
+    #   do_walk(warrior)
+    # elsif !something_visible?(spaces)
+    #   do_walk(warrior)
+    # end
+    # @action_taken = true
+
+    if enemy_space
+      if captive_space
+        if captive_space < enemy_space
+          if captive_space == 0
+            warrior.rescue! unless @action_taken
+            @action_taken = true
+          else
+            do_walk(warrior) unless @action_taken
+          end
+        else
+          warrior.shoot! unless @action_taken
+          @action_taken = true
+        end
+      else
+        warrior.shoot! unless @action_taken
+        @action_taken = true
+      end
+    else
+      do_walk(warrior) unless @action_taken
+    end
+  end
+
+  def clear_shot?(spaces)
+    enemy_space = spaces.index { |space| space.enemy? == true } if spaces.any?(&:enemy?)
+    captive_space = spaces.index { |space| space.captive? == true } if spaces.any?(&:captive?)
+    captive_space > enemy_space
+  end
+
+  def something_visible?(spaces)
+    spaces.any?(&:enemy?) || spaces.any?(&:captive?)
+  end
+
+  def do_walk(warrior)
+    @hit_the_wall ? feel_forward(warrior) : feel_backward(warrior)
+  end
+
   def feel_backward(warrior)
     case
     when warrior.feel(:backward).empty?
